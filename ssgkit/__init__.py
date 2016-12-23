@@ -44,13 +44,15 @@ class Page(object):
 
     def output_path(self):
         ballpark = self.ssg.input_to_output_path(self.source_path)
-        if os.path.basename(ballpark).startswith('index.'):
-            return markdown_extension.sub('.html', ballpark)
-        else:
+        if self.should_tuck_into_subdir():
             return markdown_extension.sub('/index.html', ballpark)
+        else:
+            return markdown_extension.sub('.html', ballpark)
 
-    def get_content(self):
-        return slurp(self.source_path)
+    def should_tuck_into_subdir(self):
+        basename = os.path.basename(self.source_path)
+        default  = not (basename.startswith('index.') or basename.startswith('404.'))
+        return self.frontmatter.get('subdirize', default)
 
     @lazy
     def content(self):
