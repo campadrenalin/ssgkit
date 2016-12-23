@@ -6,14 +6,14 @@ from string import Template
 
 markdown_extension = re.compile(r'\.(md|mdown|mkdown|markdown)$')
 
-def slurp(*path):
-    with open(os.path.join(*path)) as f:
+def slurp(*path, mode='r'):
+    with open(os.path.join(*path), mode) as f:
         return f.read()
 
-def write(path, data):
+def write(path, data, mode='w'):
     # Equivalent to mkdir -p
     os.makedirs(os.path.dirname(path), exist_ok = True)
-    with open(path, 'w') as f:
+    with open(path, mode) as f:
         f.write(data)
 
 class Page(object):
@@ -109,6 +109,7 @@ class SSG(object):
         for s in self.static:
             write(
                 self.input_to_output_path(s),
-                slurp(s),
+                slurp(s, mode = 'rb'),
+                mode = 'wb',
             )
 
