@@ -1,39 +1,13 @@
 import markdown
 import re
-import os, os.path, errno
+import os, os.path
 import json
+
+from ssgkit.util import *
+from ssgkit.timeseries import TimeSeries
 from string import Template
 
 markdown_extension = re.compile(r'\.(md|mdown|mkdown|markdown)$')
-
-def slurp(*path, mode='r'):
-    with open(os.path.join(*path), mode) as f:
-        return f.read()
-
-def write(path, data, mode='w'):
-    # Equivalent to mkdir -p
-    os.makedirs(os.path.dirname(path), exist_ok = True)
-    with open(path, mode) as f:
-        f.write(data)
-
-
-def lazy(fn):
-    '''
-    Decorator that makes a property lazy-evaluated.
-    See http://stevenloria.com/lazy-evaluated-properties-in-python/
-    '''
-    attr_name = '_lazy_' + fn.__name__
-
-    def _getter(self):
-        if not hasattr(self, attr_name):
-            setattr(self, attr_name, fn(self))
-        return getattr(self, attr_name)
-
-    def _setter(self, value):
-        setattr(self, attr_name, value)
-
-    return property(fget=_getter, fset=_setter)
-
 class Page(object):
     def __init__(self, ssg, source_path):
         self.ssg = ssg
@@ -77,6 +51,10 @@ class Page(object):
     @lazy
     def title(self):
         return self.frontmatter.get('title', os.path.basename(self.source_path))
+
+    @lazy
+    def date(self):
+        return self.frontmatter.get('date', self.title)
 
     @property
     def template_data(self):
@@ -126,6 +104,9 @@ class SSG(object):
                 for f in files
                 if not markdown_extension.search(f)
             ]
+
+    def timeseries(self, criteria = lambda x: True):
+        return TimeSeries(page for page in self.pages if criteria(page))
 
     def input_to_output_path(self, ip):
         relpath = os.path.relpath(ip, self.input_dir)
