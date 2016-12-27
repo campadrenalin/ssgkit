@@ -5,7 +5,7 @@ import json
 
 from ssgkit.util import *
 from ssgkit.timeseries import TimeSeries
-from string import Template
+import ssgkit.template
 
 markdown_extension = re.compile(r'\.(md|mdown|mkdown|markdown)$')
 class Page(object):
@@ -73,23 +73,15 @@ class Page(object):
         return self.split[-1]
 
     def __str__(self):
-        try:
-            layout = self.ssg.layouts[self.layout]
-        except KeyError:
-            raise KeyError("No such layout file: " + self.layout)
-        return layout.substitute(**self.template_data)
+        return self.ssg.renderer.render(self.layout, **self.template_data)
 
 class SSG(object):
-    def __init__(self, input_dir = './input', output_dir = './output', layout_dir = '.'):
+    def __init__(self, input_dir = './input', output_dir = './output', layout_dir = '.',
+            render_class = ssgkit.template.Renderer):
         self.input_dir  = input_dir
         self.output_dir = output_dir
         self.layout_dir = layout_dir
-        
-        self.layouts = {
-            f: Template(slurp(self.layout_dir, f))
-            for f in next(os.walk(layout_dir))[-1]
-            if f.endswith('.html')
-        }
+        self.renderer   = render_class(layout_dir)
 
         self.pages = []
         self.static = []

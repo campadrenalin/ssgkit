@@ -3,8 +3,8 @@
 import ssgkit as kit
 ssg = kit.SSG()
 for p in ssg.pages:
-    print(p.get_html())
-print(ssg.layouts)
+    print(p)
+print(ssg.renderer)
 
 if __name__ == '__main__':
     ssg.build()
