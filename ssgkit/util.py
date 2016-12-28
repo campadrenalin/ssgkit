@@ -28,3 +28,8 @@ def lazy(fn):
 
     return property(fget=_getter, fset=_setter)
 
+def extend(first, *extra, **kwargs):
+    for d in extra:
+        first.update(d)
+    first.update(kwargs)
+    return first

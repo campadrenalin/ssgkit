@@ -14,14 +14,25 @@ class Page(object):
         self.source_path = source_path
 
     def __repr__(self):
-        return "(Page %s -> %s)" % (self.source_path, self.output_path())
+        return "(Page %s)" % self.url
 
-    def output_path(self):
-        ballpark = self.ssg.input_to_output_path(self.source_path)
+    def translate_extension(self, path):
         if self.should_tuck_into_subdir():
-            return markdown_extension.sub('/index.html', ballpark)
+            return markdown_extension.sub('/index.html', path)
         else:
-            return markdown_extension.sub('.html', ballpark)
+            return markdown_extension.sub('.html', path)
+        
+    def output_path(self):
+        return self.translate_extension(
+            self.ssg.input_to_output_path(self.source_path),
+        )
+
+    @property
+    def url(self):
+        return self.translate_extension(
+            self.ssg.input_to_output_path(self.source_path, '/'),
+        )
+
 
     def should_tuck_into_subdir(self):
         basename = os.path.basename(self.source_path)
@@ -56,16 +67,28 @@ class Page(object):
     def date(self):
         return self.frontmatter.get('date', self.title)
 
+    @lazy
+    def template_extra(self):
+        return {}
+
     @property
     def template_data(self):
         '''
         Deliberately not overrideable directly. Can be modified by modifying
-        frontmatter or top-level attributes like self.title.
+        frontmatter, template_extra, or top-level attributes like self.title.
         '''
-        f = self.frontmatter
-        return dict(f,
-            content = markdown.markdown(self.md),
-            title   = self.title,
+        defaults = {
+            'content': markdown.markdown(self.md),
+            'title'  : self.title,
+            'date'   : self.date,
+            'page'   : self,
+            'ssg'    : self.ssg,
+        }
+        return extend(
+            dict(),
+            self.frontmatter,
+            defaults,
+            self.template_extra,
         )
 
     @lazy
@@ -100,9 +123,10 @@ class SSG(object):
     def timeseries(self, criteria = lambda x: True):
         return TimeSeries(page for page in self.pages if criteria(page))
 
-    def input_to_output_path(self, ip):
+    def input_to_output_path(self, ip, output_dir = None):
+        output_dir = output_dir or self.output_dir
         relpath = os.path.relpath(ip, self.input_dir)
-        return os.path.join(self.output_dir, relpath)
+        return os.path.join(output_dir, relpath)
 
     def build(self):
         for p in self.pages:

@@ -7,8 +7,10 @@ class TimeSeries(list):
 
     # Analogous to dict.get, with safe defaulting
     def get(self, index, default = None):
+        if index < 0:
+            return default
         try:
-            return self.__getitime__(index)
+            return self.__getitem__(index)
         except IndexError:
             return default
 
@@ -19,7 +21,7 @@ class TimeSeries(list):
             return None
 
         return {
-            previous : self.get(i-1),
-            current  : self.get(i),
-            next     : self.get(i+1),
+            'previous' : self.get(i-1),
+            'current'  : self.get(i),
+            'next'     : self.get(i+1),
         }
