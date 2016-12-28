@@ -31,7 +31,7 @@ class Page(object):
     def url(self):
         return self.translate_extension(
             self.ssg.input_to_output_path(self.source_path, '/'),
-        )
+        ).replace('/index.html', '/')
 
 
     def should_tuck_into_subdir(self):
